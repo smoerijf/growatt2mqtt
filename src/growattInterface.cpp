@@ -58,14 +58,14 @@ char webLineBuffer[WEB_LINE_SIZE];
   strcpy(webResponse,  "<html><head><title>Growatt</title><meta http-equiv=\"refresh\" content=\"10\"></head><body><h2>Growatt Solar Inverter to MQTT Gateway </h2>");
 
   snprintf(webLineBuffer, WEB_LINE_SIZE, "Last Modbus Transmission Status: %i - ",lastModbusTransmissionStatus ); strcat(webResponse, webLineBuffer);
-  strcat(webResponse, sendModbusError(lastModbusTransmissionStatus).c_str());
+  strcat(webResponse, getModbusErrorString(lastModbusTransmissionStatus));
 
 
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<table><tr><td><table><tr><td>Uptime </td><td> %lu days %lu:%02lu:%02lu h</td></tr>", uptime/(3600*24),(uptime/3600)%3600,(uptime/60)%60,uptime%60); strcat(webResponse, webLineBuffer);
 
   //Modbus Status
 
-  snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_STATUS         "</td><td> %i      </td></tr>" , modbusdata.status         ); strcat(webResponse, webLineBuffer);
+  snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_STATUS         "</td><td> %s </td></tr>"      , getInverterStatusString(modbusdata.status) ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_OUTPUTPOWER    "</td><td> %3.2f W</td></tr>"  , modbusdata.outputpower    ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_ENERGYTODAY    "</td><td> %3.3f kWh</td></tr>", modbusdata.energytoday    ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_ENERGYTOTAL    "</td><td> %3.2f kWh</td></tr>", modbusdata.energytotal    ); strcat(webResponse, webLineBuffer);
@@ -129,15 +129,25 @@ char webLineBuffer[WEB_LINE_SIZE];
 
   strcpy(webModbusResponse,  "<html><head></head><body><h2>Growatt Solar Inverter Modbus Status </h2>");
   snprintf(webLineBuffer, WEB_LINE_SIZE, "Last Transmission Status: %i - ",lastModbusTransmissionStatus ); strcat(webModbusResponse, webLineBuffer);
-  strcat(webModbusResponse, sendModbusError(lastModbusTransmissionStatus).c_str());
+  strcat(webModbusResponse, getModbusErrorString(lastModbusTransmissionStatus));
 
   //Modbus Input Status
   strcat(webModbusResponse,  "<h3>Input Registers</h3><table>");
 
   for (int i = 0; i < INPUT_REGISTER_COUNT; i+=8) {
-    snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td> %03i 0x%02x </td><td>" , i,i ); strcat(webModbusResponse, webLineBuffer); 
+    snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td> %03i  </td><td>" , i ); strcat(webModbusResponse, webLineBuffer); 
+    // Hex values
     for (int j = i ; j< i+8 ; j++) {
       snprintf(webLineBuffer, WEB_LINE_SIZE, "%04x ",inputRegisterContents[j] ); strcat(webModbusResponse, webLineBuffer);
+    }
+    //ASCII values
+    strcat(webModbusResponse, " ");
+    for (int j = i ; j< i+8 ; j++) {
+      uint8_t low,high;
+      low = inputRegisterContents[j]&0xff;
+      high = inputRegisterContents[j]<<8;
+      snprintf(webLineBuffer, WEB_LINE_SIZE, "%c%c", low > 31 && low < 127 ? low:46, high > 31 && high < 127 ? high:46);
+      strcat(webModbusResponse, webLineBuffer);
     }
     strcat(webModbusResponse, "</td></tr>"); 
   }
@@ -147,9 +157,19 @@ char webLineBuffer[WEB_LINE_SIZE];
   strcat(webModbusResponse,  "<h3>Holding Registers</h3><table>");
 
   for (int i = 0; i < HOLDING_REGISTER_COUNT; i+=8) {
-    snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td> %03i 0x%02x </td><td>" , i,i ); strcat(webModbusResponse, webLineBuffer); 
+    snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td> %03i </td><td>" , i ); strcat(webModbusResponse, webLineBuffer); 
+    // Hex values
     for (int j = i ; j< i+8 ; j++) {
       snprintf(webLineBuffer, WEB_LINE_SIZE, "%04x ",holdingRegisterContents[j] ); strcat(webModbusResponse, webLineBuffer);
+    }
+    //ASCII values
+    strcat(webModbusResponse, " ");
+    for (int j = i ; j< i+8 ; j++) {
+      uint8_t low,high;
+      low = inputRegisterContents[j]&0xff;
+      high = inputRegisterContents[j]<<8;
+      snprintf(webLineBuffer, WEB_LINE_SIZE, "%c%c", low > 31 && low < 127 ? low:46, high > 31 && high < 127 ? high:46);
+      strcat(webModbusResponse, webLineBuffer);
     }
     strcat(webModbusResponse, "</td></tr>"); 
   }
@@ -310,42 +330,40 @@ uint8_t growattIF::ReadInputRegisters() {
   return Success;
 }
 
-#define TMP_BUFFER_SIZE  50
-
 void growattIF::PublishInputRegisters(PubSubClient * mqtt,char * topicData)
 {
   char thisTopic[TMP_BUFFER_SIZE];
   char thisValue[TMP_BUFFER_SIZE];
 
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_STATUS        , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.status         ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_SOLARPOWER    , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.solarpower     ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV1VOLTAGE    , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv1voltage     ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV1CURRENT    , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv1current     ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV1POWER      , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv1power       ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV2VOLTAGE    , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv2voltage     ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV2CURRENT    , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv2current     ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV2POWER      , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv2power       ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_OUTPUTPOWER   , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.outputpower    ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_GRIDFREQUENCY , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.gridfrequency  ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_GRIDVOLTAGE   , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.gridvoltage    ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_ENERGYTODAY   , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.energytoday    ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_ENERGYTOTAL   , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.energytotal    ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_TOTALWORKTIME , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.totalworktime  ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV1ENERGYTODAY, topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv1energytoday ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV1ENERGYTOTAL, topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv1energytotal ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV2ENERGYTODAY, topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv2energytoday ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV2ENERGYTOTAL, topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv2energytotal ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_OPFULLPOWER   , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.opfullpower    ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_TEMPINVERTER  , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.tempinverter   ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_TEMPIPM       , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.tempipm        ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_TEMPBOOST     , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.tempboost      ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_IPF           , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.ipf            ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_REALOPPERCENT , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.realoppercent  ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_DERATINGMODE  , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.deratingmode   ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_FAULTCODE     , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.faultcode      ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_FAULTBITCODE  , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.faultbitcode   ); mqtt->publish(thisTopic, thisValue);
-snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_WARNINGBITCODE, topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.warningbitcode ); mqtt->publish(thisTopic, thisValue);
-return;
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_STATUS        , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.status         ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_SOLARPOWER    , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.solarpower     ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV1VOLTAGE    , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv1voltage     ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV1CURRENT    , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv1current     ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV1POWER      , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv1power       ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV2VOLTAGE    , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv2voltage     ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV2CURRENT    , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv2current     ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV2POWER      , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv2power       ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_OUTPUTPOWER   , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.outputpower    ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_GRIDFREQUENCY , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.gridfrequency  ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_GRIDVOLTAGE   , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.gridvoltage    ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_ENERGYTODAY   , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.energytoday    ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_ENERGYTOTAL   , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.energytotal    ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_TOTALWORKTIME , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.totalworktime  ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV1ENERGYTODAY, topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv1energytoday ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV1ENERGYTOTAL, topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv1energytotal ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV2ENERGYTODAY, topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv2energytoday ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_PV2ENERGYTOTAL, topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.pv2energytotal ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_OPFULLPOWER   , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.opfullpower    ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_TEMPINVERTER  , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.tempinverter   ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_TEMPIPM       , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.tempipm        ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_TEMPBOOST     , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%f", modbusdata.tempboost      ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_IPF           , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.ipf            ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_REALOPPERCENT , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.realoppercent  ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_DERATINGMODE  , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.deratingmode   ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_FAULTCODE     , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.faultcode      ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_FAULTBITCODE  , topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.faultbitcode   ); mqtt->publish(thisTopic, thisValue);
+  snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_WARNINGBITCODE, topicData  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%d", modbusdata.warningbitcode ); mqtt->publish(thisTopic, thisValue);
+  return;
 }
 
 
@@ -474,51 +492,30 @@ snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_GRIDFREQHIGHCONNLIMIT, topicSetti
 snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_FIRMWARE             , topicSettings  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%s", modbussettings.firmware              ); mqtt->publish(thisTopic, thisValue);
 snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_CONTROLFIRMWARE      , topicSettings  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%s", modbussettings.controlfirmware       ); mqtt->publish(thisTopic, thisValue);
 snprintf(thisTopic, TMP_BUFFER_SIZE, "%s/" STR_SERIAL               , topicSettings  ) ; snprintf(thisValue, TMP_BUFFER_SIZE, "%s", modbussettings.serial                ); mqtt->publish(thisTopic, thisValue);
-
 return;
 }
-  String growattIF::sendModbusError(uint8_t result)
-  {
-    String message = "";
-    if (result == growattInterface.ku8MBSuccess)
-    {
-        message = "Success";
-    }
-    if (result == growattInterface.ku8MBIllegalFunction)
-    {
-        message = "Illegal function";
-    }
-    if (result == growattInterface.ku8MBIllegalDataAddress)
-    {
-        message = "Illegal data address";
-    }
-    if (result == growattInterface.ku8MBIllegalDataValue)
-    {
-        message = "Illegal data value";
-    }
-    if (result == growattInterface.ku8MBSlaveDeviceFailure)
-    {
-        message = "Slave device failure";
-    }
-    if (result == growattInterface.ku8MBInvalidSlaveID)
-    {
-        message = "Invalid slave ID";
-    }
-    if (result == growattInterface.ku8MBInvalidFunction)
-    {
-        message = "Invalid function";
-    }
-    if (result == growattInterface.ku8MBResponseTimedOut)
-    {
-        message = "Response timed out";
-    }
-    if (result == growattInterface.ku8MBInvalidCRC)
-    {
-        message = "Invalid CRC";
-    }
-    if (message == "")
-    {
-        message = result;
-    }
-    return message;
+
+const char * growattIF::getModbusErrorString(uint8_t errorCode)
+{
+  switch (errorCode){
+    case growattInterface.ku8MBSuccess:             return "Success";
+    case growattInterface.ku8MBIllegalFunction:     return "Illegal function";
+    case growattInterface.ku8MBIllegalDataAddress:  return "Illegal data address" ;
+    case growattInterface.ku8MBIllegalDataValue:    return "Illegal data value" ;
+    case growattInterface.ku8MBSlaveDeviceFailure:  return "Slave device failure" ;
+    case growattInterface.ku8MBInvalidSlaveID:      return "Invalid slave ID";
+    case growattInterface.ku8MBInvalidFunction:     return "Invalid function";;
+    case growattInterface.ku8MBResponseTimedOut:    return "Response timed out";
+    case growattInterface.ku8MBInvalidCRC:          return "Invalid CRC" ;
+    default: snprintf(unknownModbusExceptionString, TMP_BUFFER_SIZE, "Modbus Exception Code: %u", errorCode ) ;return unknownModbusExceptionString;
   }
+}
+const char * growattIF::getInverterStatusString(uint8_t statusCode)
+{
+  switch (statusCode){
+    case 0:             return "0 - Waiting";
+    case 1:             return "1 - Normal";
+    case 3:             return "3 -Fault";
+    default: snprintf(unknownInverterStatusString, TMP_BUFFER_SIZE, "%u", statusCode  ) ;return unknownInverterStatusString;
+  }
+}
