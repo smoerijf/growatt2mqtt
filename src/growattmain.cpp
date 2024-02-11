@@ -81,10 +81,9 @@ void ReadInputRegisters()
   else 
   {
     Serial.print(F("Error: "));
-    String message = growattInterface.sendModbusError(result);
-    Serial.println(message);
+    Serial.println(growattInterface.getModbusErrorString(result));
     snprintf(topic, MAX_ROOT_TOPIC_LENGTH , "%s/error", topicRoot);
-    mqtt.publish(topic, message.c_str());
+    mqtt.publish(topic, growattInterface.getModbusErrorString(result));
     delay(5);
   }
   digitalWrite(STATUS_LED, 1);
@@ -108,11 +107,9 @@ void ReadHoldingRegisters()
   else
   {
     Serial.print(F("Error: "));
-    String message;
-    message = growattInterface.sendModbusError(result);
-    Serial.println(message);
+    Serial.println(growattInterface.getModbusErrorString(result));
     snprintf(topic, MAX_ROOT_TOPIC_LENGTH, "%s/error", topicRoot);
-    mqtt.publish(topic, message.c_str());
+    mqtt.publish(topic, growattInterface.getModbusErrorString(result));
     delay(5);
   }
   digitalWrite(STATUS_LED, 1);
@@ -246,7 +243,7 @@ void callback(char *topic, byte *payload, unsigned int length)
       }
       else
       {
-        snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.sendModbusError(result).c_str());
+        snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.getModbusErrorString(result));
         snprintf(rootTopic, MAX_ROOT_TOPIC_LENGTH, "%s/error", topicRoot);
         mqtt.publish(rootTopic, json);
       }
@@ -260,7 +257,7 @@ void callback(char *topic, byte *payload, unsigned int length)
         }
         else
         {
-          snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.sendModbusError(result).c_str());
+          snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.getModbusErrorString(result));
           snprintf(rootTopic, MAX_ROOT_TOPIC_LENGTH, "%s/error", topicRoot);
           mqtt.publish(rootTopic, json);
         }
@@ -277,7 +274,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     else
     {
-      snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.sendModbusError(result).c_str());
+      snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.getModbusErrorString(result));
       snprintf(rootTopic, MAX_ROOT_TOPIC_LENGTH, "%s/error", topicRoot);
       mqtt.publish(rootTopic, json);
     }
@@ -293,7 +290,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     else
     {
-      snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.sendModbusError(result).c_str());
+      snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.getModbusErrorString(result));
       snprintf(rootTopic, MAX_ROOT_TOPIC_LENGTH, "%s/error", topicRoot);
       mqtt.publish(rootTopic, json);
     }
@@ -318,7 +315,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     else
     {
-      snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.sendModbusError(result).c_str());
+      snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.getModbusErrorString(result).c_str());
       snprintf(rootTopic, MAX_ROOT_TOPIC_LENGTH, "%s/error", topicRoot);
       mqtt.publish(rootTopic, json);
     }
