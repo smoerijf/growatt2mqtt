@@ -61,12 +61,14 @@ char webLineBuffer[WEB_LINE_SIZE];
   strcat(webResponse, getModbusErrorString(lastModbusTransmissionStatus));
 
 
-  snprintf(webLineBuffer, WEB_LINE_SIZE, "<table><tr><td><table><tr><td>Uptime </td><td> %lu days %lu:%02lu:%02lu h</td></tr>", uptime/(3600*24),(uptime/3600)%3600,(uptime/60)%60,uptime%60); strcat(webResponse, webLineBuffer);
-
+  snprintf(webLineBuffer, WEB_LINE_SIZE, "<table><tr><td><table><tr><td>Interface Uptime: </td><td> %lu days %lu:%02lu:%02lu h</td></tr>", uptime/(3600*24),uptime%(3600*24)/3600,(uptime/60)%60,uptime%60); strcat(webResponse, webLineBuffer);
+  unsigned long t = (unsigned long)modbusdata.totalworktime;
+  snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>Total Inverter Work Time: </td><td> %lu days %lu:%02lu:%02lu h </td></tr>", t/(3600*24),t%(3600*24)/3600,(t/60)%60,t%60 ); strcat(webResponse, webLineBuffer);
+  strcat(webResponse, "<tr><td>-------------</td><td>");
   //Modbus Status
 
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_STATUS         "</td><td> %s </td></tr>"      , getInverterStatusString(modbusdata.status) ); strcat(webResponse, webLineBuffer);
-  snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_OUTPUTPOWER    "</td><td> %3.2f W</td></tr>"  , modbusdata.outputpower    ); strcat(webResponse, webLineBuffer);
+  snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_OUTPUTPOWER    "</td><td><b> %3.2f W</b></td></tr>"  , modbusdata.outputpower    ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_ENERGYTODAY    "</td><td> %3.3f kWh</td></tr>", modbusdata.energytoday    ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_ENERGYTOTAL    "</td><td> %3.2f kWh</td></tr>", modbusdata.energytotal    ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_SOLARPOWER     "</td><td> %3.2f W</td></tr>"  , modbusdata.solarpower     ); strcat(webResponse, webLineBuffer);
@@ -82,11 +84,11 @@ char webLineBuffer[WEB_LINE_SIZE];
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_PV2CURRENT     "</td><td> %3.2f A</td></tr>"  , modbusdata.pv2current     ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_GRIDFREQUENCY  "</td><td> %3.2f Hz</td></tr>" , modbusdata.gridfrequency  ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_GRIDVOLTAGE    "</td><td> %3.2f V</td></tr>"  , modbusdata.gridvoltage    ); strcat(webResponse, webLineBuffer);
-  snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_TOTALWORKTIME  "</td><td> %3.2f s</td></tr>"  , modbusdata.totalworktime  ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_OPFULLPOWER    "</td><td> %3.2f </td></tr>"   , modbusdata.opfullpower    ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_TEMPINVERTER   "</td><td> %3.2f C</td></tr>"  , modbusdata.tempinverter   ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_TEMPIPM        "</td><td> %3.2f C</td></tr>"  , modbusdata.tempipm        ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_TEMPBOOST      "</td><td> %3.2f C</td></tr>"  , modbusdata.tempboost      ); strcat(webResponse, webLineBuffer);
+  snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_TOTALWORKTIME  "</td><td> %3.2f s</td></tr>"  , modbusdata.totalworktime  ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_IPF            "</td><td> %i    </td></tr>"   , modbusdata.ipf            ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_REALOPPERCENT  "</td><td> %i    </td></tr>"   , modbusdata.realoppercent  ); strcat(webResponse, webLineBuffer);
   snprintf(webLineBuffer, WEB_LINE_SIZE, "<tr><td>" STR_DERATINGMODE   "</td><td> %i    </td></tr>"   , modbusdata.deratingmode   ); strcat(webResponse, webLineBuffer);
@@ -143,9 +145,9 @@ char webLineBuffer[WEB_LINE_SIZE];
     //ASCII values
     strcat(webModbusResponse, " ");
     for (int j = i ; j< i+8 ; j++) {
-      uint8_t low,high;
-      low = inputRegisterContents[j]&0xff;
-      high = inputRegisterContents[j]<<8;
+      uint16_t low,high;
+      high = inputRegisterContents[j]&0xff;
+      low = inputRegisterContents[j]>>8;
       snprintf(webLineBuffer, WEB_LINE_SIZE, "%c%c", low > 31 && low < 127 ? low:46, high > 31 && high < 127 ? high:46);
       strcat(webModbusResponse, webLineBuffer);
     }
@@ -165,9 +167,9 @@ char webLineBuffer[WEB_LINE_SIZE];
     //ASCII values
     strcat(webModbusResponse, " ");
     for (int j = i ; j< i+8 ; j++) {
-      uint8_t low,high;
-      low = inputRegisterContents[j]&0xff;
-      high = inputRegisterContents[j]<<8;
+      uint16_t low,high;
+      high = holdingRegisterContents[j]&0xff;
+      low = holdingRegisterContents[j]>>8;
       snprintf(webLineBuffer, WEB_LINE_SIZE, "%c%c", low > 31 && low < 127 ? low:46, high > 31 && high < 127 ? high:46);
       strcat(webModbusResponse, webLineBuffer);
     }
