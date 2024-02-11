@@ -11,6 +11,7 @@ class growattIF {
 #define SLAVE_ID        1         // Default slave ID of Growatt
 #define MODBUS_RATE     9600      // Modbus speed of Growatt, do not change
 
+#define TMP_BUFFER_SIZE  50 // used for String Operations
   private:
     ModbusMaster growattInterface;
     SoftwareSerial *serial;
@@ -24,7 +25,7 @@ class growattIF {
     int overflow;
 
 
-    uint8_t lastModbusTransmissionStatus;
+    
     #define INPUT_REGISTER_COUNT 128
     uint16_t inputRegisterContents[INPUT_REGISTER_COUNT];
     #define HOLDING_REGISTER_COUNT 128
@@ -160,8 +161,12 @@ class growattIF {
     uint8_t ReadHoldingRegisters();
     void PublishHoldingRegisters(PubSubClient * mqtt,char * topicRoot);
 
-    String sendModbusError(uint8_t result);
-    
+    const char * getModbusErrorString(uint8_t errorCode);
+    const char * getInverterStatusString(uint8_t statusCode);
+
+    uint8_t lastModbusTransmissionStatus;    
+    char unknownModbusExceptionString[TMP_BUFFER_SIZE];    
+    char unknownInverterStatusString[TMP_BUFFER_SIZE];    
 
     // Error codes
     static const uint8_t Success    = 0x00;
