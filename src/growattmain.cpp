@@ -315,7 +315,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     else
     {
-      snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.getModbusErrorString(result).c_str());
+      snprintf(json, MAX_JSON_TOPIC_LENGTH, "last trasmition has faild with: %s", growattInterface.getModbusErrorString(result));
       snprintf(rootTopic, MAX_ROOT_TOPIC_LENGTH, "%s/error", topicRoot);
       mqtt.publish(rootTopic, json);
     }
