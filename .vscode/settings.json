@@ -5,6 +5,18 @@
         "memory_resource": "cpp",
         "memory": "cpp",
         "ostream": "cpp",
-        "streambuf": "cpp"
-    }
+        "streambuf": "cpp",
+        "optional": "cpp",
+        "istream": "cpp",
+        "ratio": "cpp",
+        "system_error": "cpp",
+        "array": "cpp",
+        "functional": "cpp",
+        "regex": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp"
+    },
+    "idf.portWin": "COM3",
+    "idf.flashType": "UART"
 }
