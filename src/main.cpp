@@ -19,6 +19,8 @@
 #include "mqtt.h"
 #include "eepromConfig.h"
 #include "data2mqtt.h"
+#include "device.h"
+#include "modbus.h"
 
 
 os_timer_t myTimer;
@@ -30,14 +32,16 @@ PubSubClient mqtt(mqtt_server, mqtt_server_port, espClient);
 
 const MqttDataPoint_t mqttDataPoints[] = 
 {
-    { 0, OneWord, Int, 10, "status", "" },
-    { 1, TwoWord, FloatDeci, 0, "solar_power", "W" },
-    { 3, OneWord, FloatDeci, 10, "pv1_voltage", "V" },
-    { 4, OneWord, FloatDeci, 10, "pv1_current", "A" },
-    { 5, TwoWord, FloatDeci, 0, "pv1_power", "W" }
+    { 0, Input, OneWord, Int, 10, "status", "" },
+    { 1, Input, TwoWord, FloatDeci, 0, "solar_power", "W" },
+    { 3, Input, OneWord, FloatDeci, 10, "pv1_voltage", "V" },
+    { 4, Input, OneWord, FloatDeci, 10, "pv1_current", "A" },
+    { 5, Input, TwoWord, FloatDeci, 0, "pv1_power", "W" }
 };
 char dataTopicPrefix[TOPPIC_ROOT_SIZE + 5]; 
-Data2mqtt data2mqtt(mqtt, mqttDataPoints, sizeof(mqttDataPoints) / sizeof(MqttDataPoint_t), dataTopicPrefix);
+Device growattDevice(mqttDataPoints, sizeof(mqttDataPoints) / sizeof(MqttDataPoint_t));
+Data2mqtt data2mqtt(mqtt, growattDevice, dataTopicPrefix);
+Modbus modbus(MAX485_RX, MAX485_TX, 1, 9600);
 
 
 // This is the 1 second timer callback function
@@ -177,16 +181,8 @@ void loop()
         {
             if (strlen(mqtt_server) > 0)
             {
-                uint16_t valueBuffer[] = 
-                {
-                    1, // status
-                    2, 3, // solar_power
-                    4, // pv1 v
-                    5, // pv1 a
-                    6, 7 // pw w
-                };
-
-                data2mqtt.publish(valueBuffer);
+                modbus.read(growattDevice);
+                data2mqtt.publish();
             }
         }
         

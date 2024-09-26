@@ -1,28 +1,27 @@
 #include <data2mqtt.h>
 #include <WebSerial.h>
+#include "device.h"
 
 
 #define TMP_BUFFER_SIZE  50 // used for String Operations
 
 
-Data2mqtt::Data2mqtt(PubSubClient& mqtt, const MqttDataPoint_t* datapoints, uint8_t numberOfDatapoints, char* topicPrefix) : _mqtt(mqtt)
+Data2mqtt::Data2mqtt(PubSubClient& mqtt, Device& device, char* topicPrefix) : _mqtt(mqtt), _device(device)
 {
-    _datapoints = datapoints;
-    _numberOfDatapoints = numberOfDatapoints;
     _topicPrefix = topicPrefix;
 }
 
-void Data2mqtt::publish(uint16_t* data)
+void Data2mqtt::publish()
 {
-    for (uint8_t i = 0; i < _numberOfDatapoints; i++)
+    for (uint8_t i = 0; i < _device.numberOfDatapoints; i++)
     {
         char dataTopic[TMP_BUFFER_SIZE];
         char dataValue[TMP_BUFFER_SIZE];
 
-        MqttDataPoint_t datapointDescr = _datapoints[i];
+        MqttDataPoint_t datapointDescr = _device.datapoints[i];
         if (datapointDescr.datatype == Int)
         {
-            uint16_t value = (data[datapointDescr.modbus_address]);
+            uint16_t value = _device.Get(datapointDescr);
             snprintf(dataValue, TMP_BUFFER_SIZE, "%d", value);
         }
         else
@@ -30,11 +29,11 @@ void Data2mqtt::publish(uint16_t* data)
             float value;
             if (datapointDescr.size == OneWord)
             {
-                value = data[datapointDescr.modbus_address];
+                value = _device.Get(datapointDescr);
             }
             else
             {
-                value = ((data[datapointDescr.modbus_address] << 16) | data[datapointDescr.modbus_address + 1]);
+                value = _device.Get32(datapointDescr);
             }
 
             if (datapointDescr.datatype == FloatDeci)
