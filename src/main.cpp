@@ -18,6 +18,7 @@
 #include "settings.h"
 #include "mqtt.h"
 #include "eepromConfig.h"
+#include "data2mqtt.h"
 
 
 os_timer_t myTimer;
@@ -26,6 +27,17 @@ bool secondsFlag;
 AsyncWebServer server(80);
 WiFiClient espClient;
 PubSubClient mqtt(mqtt_server, mqtt_server_port, espClient);
+
+const MqttDataPoint_t mqttDataPoints[] = 
+{
+    { 0, OneWord, Int, 10, "status", "" },
+    { 1, TwoWord, FloatDeci, 0, "solar_power", "W" },
+    { 3, OneWord, FloatDeci, 10, "pv1_voltage", "V" },
+    { 4, OneWord, FloatDeci, 10, "pv1_current", "A" },
+    { 5, TwoWord, FloatDeci, 0, "pv1_power", "W" }
+};
+char dataTopicPrefix[TOPPIC_ROOT_SIZE + 5]; 
+Data2mqtt data2mqtt(mqtt, mqttDataPoints, sizeof(mqttDataPoints) / sizeof(MqttDataPoint_t), dataTopicPrefix);
 
 
 // This is the 1 second timer callback function
@@ -83,7 +95,8 @@ void setup()
     WiFi.macAddress(mac);
     snprintf(fullClientID, CLIENT_ID_SIZE, "%s-%02x%02x%02x", clientID, mac[3], mac[4], mac[5]);
     snprintf(topicRoot, TOPPIC_ROOT_SIZE, "%s-%02x%02x%02x", clientID, mac[3], mac[4], mac[5]);
-    Serial.printf("Client ID: %s\n", fullClientID);
+    snprintf(dataTopicPrefix, TOPPIC_ROOT_SIZE + 5, "%s/data", topicRoot);
+    Serial.printf("Client ID: %s, MQTT data topic prefix: %s\n", fullClientID, dataTopicPrefix);
   
     WebSerial.onMessage([&](uint8_t *data, size_t len) 
     {
@@ -137,42 +150,6 @@ void setup()
     os_timer_arm(&myTimer, 1000, true);
 }
 
-typedef enum
-{
-    Int,       // Integer
-    Float,     // float
-    FloatDeci, // float, map with 0,1 precision
-    FloatDeci5,// float, map with 0,5 precision
-    FloatMilli // float, map with 0,01 precision
-} DataPointType_t;
-
-typedef enum
-{
-    OneWord,
-    TwoWord,
-} RegisterSize_t;
-
-typedef struct
-{
-    uint16_t modbus_address;
-    RegisterSize_t size;
-    DataPointType_t datatype;
-    uint16_t modbus_update_skips; // 0 = every modbus poll cycle
-    const char* mqtt_topic;
-    const char* value_unit;
-} MqttDataPoint_t;
-
-
-MqttDataPoint_t mqttDataPoints[] = 
-{
-    { 0, OneWord, Int, 10, "status", "" },
-    { 1, TwoWord, FloatDeci, 0, "solar_power", "W" },
-    { 3, OneWord, FloatDeci, 10, "pv1_voltage", "V" },
-    { 4, OneWord, FloatDeci, 10, "pv1_current", "A" },
-    { 5, TwoWord, FloatDeci, 0, "pv1_power", "W" }
-};
-#define TMP_BUFFER_SIZE  50 // used for String Operations
-
 
 void loop()
 {
@@ -194,16 +171,7 @@ void loop()
     if (secondsFlag)
     {
         secondsFlag = false;
-
-        if (seconds % 2 == 0)
-        {
-            WebSerial.printf("running %li\n", seconds);
-            digitalWrite(STATUS_LED, 1);
-        }
-        else
-        {
-            digitalWrite(STATUS_LED, 0);
-        }
+        digitalWrite(STATUS_LED, seconds % 2);
 
         if (seconds % config.modbus_update_sec == 0)
         {
@@ -218,51 +186,7 @@ void loop()
                     6, 7 // pw w
                 };
 
-                size_t size = sizeof(mqttDataPoints) / sizeof(MqttDataPoint_t);
-                WebSerial.printf("MQTT datapoints: %i\n", size);
-                for (uint8_t i = 0; i < size; i++)
-                {
-                    char dataTopic[TMP_BUFFER_SIZE];
-                    char dataValue[TMP_BUFFER_SIZE];
-
-                    MqttDataPoint_t datapointDescr = mqttDataPoints[i];
-                    if (datapointDescr.datatype == Int)
-                    {
-                        uint16_t value = valueBuffer[datapointDescr.modbus_address];
-                        snprintf(dataValue, TMP_BUFFER_SIZE, "%d", value);
-                    }
-                    else
-                    {
-                        float value;
-                        if (datapointDescr.size == OneWord)
-                        {
-                            value = valueBuffer[datapointDescr.modbus_address];
-                        }
-                        else
-                        {
-                            value = ((valueBuffer[datapointDescr.modbus_address] << 16) | valueBuffer[datapointDescr.modbus_address + 1]);
-                        }
-
-                        if (datapointDescr.datatype == FloatDeci)
-                        {
-                            value *= 0.1;
-                        }
-                        else if (datapointDescr.datatype == FloatMilli)
-                        {
-                            value *= 0.01;
-                        }
-                        else if (datapointDescr.datatype == FloatDeci5)
-                        {
-                            value *= 0.5;
-                        }
-
-                        snprintf(dataValue, TMP_BUFFER_SIZE, "%f", value);
-                    }
-
-                    snprintf(dataTopic, TMP_BUFFER_SIZE, "%s/data/%s", topicRoot, datapointDescr.mqtt_topic);
-                    mqtt.publish(dataTopic, dataValue);
-                    WebSerial.printf("MQTT publish %s = %s", dataTopic, dataValue);
-                }
+                data2mqtt.publish(valueBuffer);
             }
         }
         
