@@ -16,6 +16,3 @@ typedef struct
 } configData_t;
 
 configData_t  config;
-
-
-

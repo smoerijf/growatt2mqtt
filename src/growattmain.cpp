@@ -18,6 +18,7 @@
 #include <ESP8266WiFi.h>      // Wifi connection
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <WebSerial.h>
 //#include <ESP8266WebServer.h> // Web server for general HTTP response
 #elif defined(ESP32)
 #include <WiFi.h>
@@ -82,6 +83,9 @@ void ReadInputRegisters()
   {
     Serial.print(F("Error: "));
     Serial.println(growattInterface.getModbusErrorString(result));
+    WebSerial.print(F("Error: "));
+    WebSerial.println(growattInterface.getModbusErrorString(result));
+
     snprintf(topic, MAX_ROOT_TOPIC_LENGTH , "%s/error", topicRoot);
     mqtt.publish(topic, growattInterface.getModbusErrorString(result));
     delay(5);
@@ -108,6 +112,9 @@ void ReadHoldingRegisters()
   {
     Serial.print(F("Error: "));
     Serial.println(growattInterface.getModbusErrorString(result));
+    WebSerial.print(F("Error: "));
+    WebSerial.println(growattInterface.getModbusErrorString(result));
+
     snprintf(topic, MAX_ROOT_TOPIC_LENGTH, "%s/error", topicRoot);
     mqtt.publish(topic, growattInterface.getModbusErrorString(result));
     delay(5);
@@ -220,6 +227,11 @@ void callback(char *topic, byte *payload, unsigned int length)
   Serial.print(topic);
   Serial.print(F("], "));
   Serial.println(message);
+
+  WebSerial.print(F("Message arrived on topic: ["));
+  WebSerial.print(topic);
+  WebSerial.print(F("], "));
+  WebSerial.println(message);
 #endif
 
   snprintf(expectedTopic, MAX_EXPECTED_TOPIC_LENGTH, "%s/write/getSettings", topicRoot);
@@ -383,6 +395,10 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
 }
 
+void recvMsg(uint8_t *data, size_t len){
+    WebSerial.println("Received Data...");
+}
+
 void setup()
 {
   Serial.begin(SERIAL_RATE);
@@ -517,6 +533,11 @@ void setup()
               } else request->send(404);
     });
 #endif
+    
+    // WebSerial is accessible at "<IP Address>/webserial" in browser
+    WebSerial.begin(&server);
+    WebSerial.msgCallback(recvMsg);
+
     server.begin();
     Serial.println(F("HTTP server started"));
 
@@ -632,6 +653,8 @@ void loop()
 #ifdef DEBUG_MQTT
       Serial.println(value);
       Serial.println(F("MQTT status sent"));
+      WebSerial.println(value);
+      WebSerial.println(F("MQTT status sent"));
 #endif      
     }
     updateStatus = false;
@@ -647,6 +670,4 @@ void loop()
     }
     checkWifi = false;
   }
-
-  
 }
