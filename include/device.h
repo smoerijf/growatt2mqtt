@@ -30,11 +30,11 @@ enum RegisterType
 
 struct MqttDataPoint
 {
-    uint16_t modbus_address;
-    RegisterType modbus_address_type;
-    RegisterSize size;
-    DataPointType datatype;
-    uint16_t modbus_update_skips; // 0 = every modbus poll cycle
+    const uint16_t modbus_address;
+    const RegisterType modbus_address_type;
+    const RegisterSize size;
+    const DataPointType datatype;
+    const uint16_t modbus_update_skips; // 0 = every modbus poll cycle
     const char* mqtt_topic;
     const char* value_unit;
 };
@@ -59,7 +59,7 @@ public:
     uint32_t Get32(MqttDataPoint& datapoint);
 
     const MqttDataPoint* datapoints;
-    uint8_t numberOfDatapoints;
+	uint8_t numberOfDatapoints;
 };
 
 #endif

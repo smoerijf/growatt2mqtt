@@ -2,7 +2,7 @@
 #define GLOBALS_h
 
 
-const char buildversion[] = "v0.1.2";
+const char buildversion[] = "v0.1.3";
 
 
 #define DEBUG_SERIAL    

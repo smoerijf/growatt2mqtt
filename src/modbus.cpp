@@ -32,6 +32,10 @@ void Modbus::readBlock(Device& device, RegisterType registerType, uint16_t start
             device.Set(registerType, startAddress + i, _modbus.getResponseBuffer(i));
         }
     }
+    else
+    {
+        WebSerial.printf("Modbus read (%i, %i) error: %s\n", startAddress, nToRead, getModbusErrorString(_lastModbusTransmissionStatus));
+    }
 }
 
 #define wordsToRead(datapoint) ((datapoint.size == OneWord) ? 1 : 2)
@@ -50,6 +54,7 @@ void Modbus::read(Device& device)
         {
             // Gap too large
             readBlock(device, registerType, startAddress, nToRead);
+            delay(10);
 
             startAddress = datapoint.modbus_address;
             nToRead = 0;
@@ -67,4 +72,23 @@ void Modbus::read(Device& device)
     {
         readBlock(device, registerType, startAddress, nToRead);
     }
+}
+
+const char * Modbus::getModbusErrorString(uint8_t errorCode)
+{
+    switch (errorCode)
+    {
+        case _modbus.ku8MBSuccess:             return "Success";
+        case _modbus.ku8MBIllegalFunction:     return "Illegal function";
+        case _modbus.ku8MBIllegalDataAddress:  return "Illegal data address";
+        case _modbus.ku8MBIllegalDataValue:    return "Illegal data value";
+        case _modbus.ku8MBSlaveDeviceFailure:  return "Slave device failure";
+        case _modbus.ku8MBInvalidSlaveID:      return "Invalid slave ID";
+        case _modbus.ku8MBInvalidFunction:     return "Invalid function";
+        case _modbus.ku8MBResponseTimedOut:    return "Response timed out";
+        case _modbus.ku8MBInvalidCRC:          return "Invalid CRC";
+    }
+
+    snprintf(unknownModbusExceptionString, MODBUS_TMP_BUFFER_SIZE, "Modbus Exception Code: %u", errorCode );
+    return unknownModbusExceptionString;
 }
