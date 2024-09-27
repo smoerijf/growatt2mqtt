@@ -22,7 +22,7 @@ const char topicRootStart[] = "growatt2mqtt";      // MQTT root topic for the de
 
 // Comment the entire second below for dynamic IP (including the define)
 #define FIXEDIP   1
-const IPAddress local_IP(192, 168, 1, 43);     // Set your Static IP address
+const IPAddress local_IP(192, 168, 1, 44);     // Set your Static IP address
 const IPAddress gateway(192, 168, 1, 1);          // Set your Gateway IP address
 const IPAddress subnet(255, 255, 255, 0);
 const IPAddress primaryDNS(192, 168, 1, 1);   //optional

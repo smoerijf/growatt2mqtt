@@ -18,7 +18,7 @@ void Data2mqtt::publish()
         char dataTopic[TMP_BUFFER_SIZE];
         char dataValue[TMP_BUFFER_SIZE];
 
-        MqttDataPoint_t datapointDescr = _device.datapoints[i];
+        MqttDataPoint datapointDescr = _device.datapoints[i];
         if (datapointDescr.datatype == Int)
         {
             uint16_t value = _device.Get(datapointDescr);

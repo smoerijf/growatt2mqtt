@@ -15,6 +15,8 @@ private:
     
     uint8_t _lastModbusTransmissionStatus;
 
+    void readBlock(Device& device, RegisterType registerType, uint16_t startAddress, uint16_t nToRea);
+
 public:
     Modbus(int pin_rx, int pin_tx, int slave_id, uint32_t baud);
 

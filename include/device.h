@@ -4,40 +4,40 @@
 #include "Arduino.h"
 
 
-typedef enum
+enum DataPointType
 {
     Int,       // Integer
     Float,     // float
     FloatDeci, // float, map with 0,1 precision
     FloatDeci5,// float, map with 0,5 precision
     FloatMilli // float, map with 0,01 precision
-} DataPointType_t;
+};
 
 
-typedef enum
+enum RegisterSize
 {
     OneWord,
     TwoWord,
-} RegisterSize_t;
+};
 
 
-typedef enum
+enum RegisterType
 {
     Input,
     Holding
-} RegisterType_t;
+};
 
 
-typedef struct
+struct MqttDataPoint
 {
     uint16_t modbus_address;
-    RegisterType_t modbus_address_type;
-    RegisterSize_t size;
-    DataPointType_t datatype;
+    RegisterType modbus_address_type;
+    RegisterSize size;
+    DataPointType datatype;
     uint16_t modbus_update_skips; // 0 = every modbus poll cycle
     const char* mqtt_topic;
     const char* value_unit;
-} MqttDataPoint_t;
+};
 
 
 class Device
@@ -46,19 +46,19 @@ private:
    uint16_t _inputData[128];
 
 public:
-    Device(const MqttDataPoint_t* datapoints, uint8_t numberOfDatapoints);
+    Device(const MqttDataPoint* datapoints, uint8_t numberOfDatapoints);
 
     void SetInputRegister(uint16_t reg, uint16_t value);
     uint16_t GetInputRegister(uint16_t reg);
 
-    void Set(RegisterType_t type, uint16_t reg, uint16_t value);
-    uint16_t Get(RegisterType_t type, uint16_t reg);
+    void Set(RegisterType type, uint16_t reg, uint16_t value);
+    uint16_t Get(RegisterType type, uint16_t reg);
 
-    void Set(MqttDataPoint_t& datapoint, uint16_t value);
-    uint16_t Get(MqttDataPoint_t& datapoint);
-    uint32_t Get32(MqttDataPoint_t& datapoint);
+    void Set(MqttDataPoint& datapoint, uint16_t value);
+    uint16_t Get(MqttDataPoint& datapoint);
+    uint32_t Get32(MqttDataPoint& datapoint);
 
-    const MqttDataPoint_t* datapoints;
+    const MqttDataPoint* datapoints;
     uint8_t numberOfDatapoints;
 };
 

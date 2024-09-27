@@ -30,16 +30,38 @@ AsyncWebServer server(80);
 WiFiClient espClient;
 PubSubClient mqtt(mqtt_server, mqtt_server_port, espClient);
 
-const MqttDataPoint_t mqttDataPoints[] = 
+const MqttDataPoint mqttDataPoints[] = 
 {
     { 0, Input, OneWord, Int, 10, "status", "" },
     { 1, Input, TwoWord, FloatDeci, 0, "solar_power", "W" },
     { 3, Input, OneWord, FloatDeci, 10, "pv1_voltage", "V" },
     { 4, Input, OneWord, FloatDeci, 10, "pv1_current", "A" },
-    { 5, Input, TwoWord, FloatDeci, 0, "pv1_power", "W" }
+    { 5, Input, TwoWord, FloatDeci, 0, "pv1_power", "W" },
+    { 7, Input, OneWord, FloatDeci, 10, "pv2_voltage", "V" },
+    { 8, Input, OneWord, FloatDeci, 10, "pv2_current", "A" },
+    { 9, Input, TwoWord, FloatDeci, 0, "pv2_power", "W" },
+    
+    { 35, Input, TwoWord, FloatDeci, 0, "output_power", "W" },
+    { 37, Input, OneWord, FloatMilli, 0, "grid_frequency", "Hz" },
+    { 38, Input, OneWord, FloatDeci, 0, "grid_phase1_voltage", "V" },
+    { 39, Input, OneWord, FloatDeci, 0, "grid_phase1_current", "A" },
+    { 40, Input, TwoWord, FloatDeci, 0, "grid_phase1_output", "VA" },
+    { 42, Input, OneWord, FloatDeci, 0, "grid_phase2_voltage", "V" },
+    { 43, Input, OneWord, FloatDeci, 0, "grid_phase2_current", "A" },
+    { 44, Input, TwoWord, FloatDeci, 0, "grid_phase2_output", "VA" },
+    { 46, Input, OneWord, FloatDeci, 0, "grid_phase3_voltage", "V" },
+    { 47, Input, OneWord, FloatDeci, 0, "grid_phase3_current", "A" },
+    { 48, Input, TwoWord, FloatDeci, 0, "grid_phase3_output", "VA" },
+    { 50, Input, OneWord, FloatDeci, 0, "grid_line12_voltage", "V" },
+    { 51, Input, OneWord, FloatDeci, 0, "grid_line23_voltage", "V" },
+    { 52, Input, OneWord, FloatDeci, 0, "grid_line32_voltage", "V" },
+    { 53, Input, TwoWord, FloatDeci, 0, "today_generated_energy", "kWh" },
+    { 57, Input, TwoWord, FloatDeci5, 0, "total_working_time", "s" },
+    { 59, Input, TwoWord, FloatDeci, 0, "pv1_today_energy", "kWh" },
+    { 63, Input, TwoWord, FloatDeci, 0, "pv2_today_energy", "kWh" }
 };
 char dataTopicPrefix[TOPPIC_ROOT_SIZE + 5]; 
-Device growattDevice(mqttDataPoints, sizeof(mqttDataPoints) / sizeof(MqttDataPoint_t));
+Device growattDevice(mqttDataPoints, sizeof(mqttDataPoints) / sizeof(MqttDataPoint));
 Data2mqtt data2mqtt(mqtt, growattDevice, dataTopicPrefix);
 Modbus modbus(MAX485_RX, MAX485_TX, 1, 9600);
 
