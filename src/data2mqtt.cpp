@@ -3,7 +3,7 @@
 #include "device.h"
 
 
-#define TMP_BUFFER_SIZE  50 // used for String Operations
+#define TMP_BUFFER_SIZE  64 // used for String Operations
 
 
 Data2mqtt::Data2mqtt(PubSubClient& mqtt, Device& device, char* topicPrefix) : _mqtt(mqtt), _device(device)

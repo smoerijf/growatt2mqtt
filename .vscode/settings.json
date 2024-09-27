@@ -19,7 +19,10 @@
         "random": "cpp",
         "string": "cpp",
         "string_view": "cpp",
-        "ranges": "cpp"
+        "ranges": "cpp",
+        "algorithm": "cpp",
+        "mutex": "cpp",
+        "stop_token": "cpp"
     },
     "idf.portWin": "COM3",
     "idf.flashType": "UART"

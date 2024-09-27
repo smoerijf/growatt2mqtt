@@ -58,7 +58,49 @@ const MqttDataPoint mqttDataPoints[] =
     { 53, Input, TwoWord, FloatDeci, 0, "today_generated_energy", "kWh" },
     { 57, Input, TwoWord, FloatDeci5, 0, "total_working_time", "s" },
     { 59, Input, TwoWord, FloatDeci, 0, "pv1_today_energy", "kWh" },
-    { 63, Input, TwoWord, FloatDeci, 0, "pv2_today_energy", "kWh" }
+    { 63, Input, TwoWord, FloatDeci, 0, "pv2_today_energy", "kWh" },
+
+    { 93, Input, OneWord, FloatDeci, 0, "inverter_temperature", "°C" },
+    { 94, Input, OneWord, FloatDeci, 0, "inverter_ipm_temperature", "°C" },
+    { 95, Input, OneWord, FloatDeci, 0, "boost_temperature", "°C" },
+    { 98, Input, OneWord, FloatDeci, 0, "p_bus_voltage", "V" },
+    { 99, Input, OneWord, FloatDeci, 0, "n_bus_voltage", "V" },
+    
+    { 3041, Input, TwoWord, FloatDeci, 0, "touser_fwd_power", "W" },
+    { 3043, Input, TwoWord, FloatDeci, 0, "togrid_rev_power", "W" },
+    { 3045, Input, TwoWord, FloatDeci, 0, "toload_power", "W" },
+
+    { 3125, Input, TwoWord, FloatDeci, 0, "battery_discharged_today_energy", "kWh" },
+    { 3127, Input, TwoWord, FloatDeci, 0, "battery_discharged_total_energy", "kWh" },
+    { 3129, Input, TwoWord, FloatDeci, 0, "battery_charged_today_energy", "kWh" },
+    { 3131, Input, TwoWord, FloatDeci, 0, "battery_charged_total_energy", "kWh" },
+    { 3133, Input, TwoWord, FloatDeci, 0, "battery_charged_today_from_grid", "kWh" },
+    { 3135, Input, TwoWord, FloatDeci, 0, "battery_charged_total_from_grid", "kWh" },
+    
+    { 3166, Input, OneWord, Int, 0, "battery_status", "" },
+    { 3167, Input, OneWord, Int, 0, "battery_fault", "" },
+    { 3168, Input, OneWord, Int, 0, "battery_warning", "" },
+    { 3169, Input, OneWord, FloatDeci, 0, "battery_voltage", "V" },
+    { 3170, Input, OneWord, FloatDeci, 0, "battery_current", "A" },
+    { 3171, Input, OneWord, Int, 0, "battery_soc", "%" },
+    { 3172, Input, OneWord, FloatDeci, 0, "battery_bus1_voltage", "V" },
+    { 3173, Input, OneWord, FloatDeci, 0, "battery_bus2_voltage", "V" },
+    { 3176, Input, OneWord, FloatDeci, 0, "battery_a_temperature", "°C" },
+    { 3177, Input, OneWord, FloatDeci, 0, "battery_b_temperature", "°C" },
+    { 3178, Input, TwoWord, FloatDeci, 0, "battery_discharge_power", "W" },
+    { 3180, Input, TwoWord, FloatDeci, 0, "battery_charge_power", "W" },
+    { 3182, Input, TwoWord, FloatDeci, 0, "battery_discharged_total", "kWh" },
+    { 3184, Input, TwoWord, FloatDeci, 0, "battery_charged_total", "kWh" },
+    
+    { 3212, Input, OneWord, Int, 0, "bms_status", "" },
+    { 3213, Input, OneWord, Int, 0, "bms_error", "" },
+    { 3214, Input, OneWord, Int, 0, "bms_warning", "" },
+    { 3215, Input, OneWord, Int, 0, "bms_soc", "%" },
+    { 3216, Input, OneWord, FloatMilli, 0, "bms_voltage", "V" },
+    { 3217, Input, OneWord, FloatMilli, 0, "bms_current", "A" },
+    { 3218, Input, OneWord, FloatDeci, 0, "bms_current", "°C" },
+    { 3221, Input, OneWord, Int, 0, "bms_cycle_count", "" }, 
+    { 3222, Input, OneWord, Int, 0, "bms_soh", "%" },
 };
 char dataTopicPrefix[TOPPIC_ROOT_SIZE + 5]; 
 Device growattDevice(mqttDataPoints, sizeof(mqttDataPoints) / sizeof(MqttDataPoint));

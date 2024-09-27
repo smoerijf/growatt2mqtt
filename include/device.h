@@ -2,6 +2,7 @@
 #define DEVICE_h
 
 #include "Arduino.h"
+#include <map>
 
 
 enum DataPointType
@@ -43,7 +44,7 @@ struct MqttDataPoint
 class Device
 {    
 private:
-   uint16_t _inputData[128];
+   std::map<uint16_t, uint16_t> _inputData;
 
 public:
     Device(const MqttDataPoint* datapoints, uint8_t numberOfDatapoints);
